@@ -29,7 +29,7 @@ const ShopCategory = (props) => {
 
       <div className="shopcategory-indexSort">
         <p>
-          <span>Showing products</span>
+          <span>Explore Products</span>
         </p>
 
         <div className="shopcategory-sort">

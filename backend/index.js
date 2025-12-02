@@ -1,9 +1,11 @@
+const port=3000
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const multer = require("multer");
 const path = require("path");
+const fs = require("fs");
 
 const app = express();
 app.use(express.json());
@@ -11,6 +13,9 @@ app.use(cors());
 
 // MongoDB Connection
 mongoose.connect("mongodb://127.0.0.1:27017/shoppingcart");
+
+const uploadDir = './upload/images';
+fs.mkdirSync(uploadDir, { recursive: true });
 
 // User Schema
 const Users = mongoose.model("Users", {
@@ -31,14 +36,23 @@ const Product = mongoose.model("Product", {
 
 // Storage for images
 const storage = multer.diskStorage({
-  destination: "./upload/images",
+  destination: uploadDir,
   filename: (req, file, cb) => {
     cb(null, `${file.fieldname}_${Date.now()}${path.extname(file.originalname)}`);
   },
 });
 
 const upload = multer({ storage: storage });
+
 app.use("/images", express.static("upload/images"));
+app.post('/upload', upload.single("product"), (req, res) => {
+  res.json
+  ({
+    success:1,
+    image_url:`http://localhost:${port}/images/${req.file.filename}`
+  })  
+})
+
 
 // Signup
 app.post("/signup", async (req, res) => {
@@ -89,18 +103,32 @@ const fetchUser = async (req, res, next) => {
 };
 
 // Add Product
-app.post("/addproduct", upload.single("product"), async (req, res) => {
-  const product = new Product({
-    name: req.body.name,
-    image: req.file.filename,
-    category: req.body.category,
-    new_price: req.body.new_price,
-    old_price: req.body.old_price,
-  });
+app.post("/addproduct", async (req, res) => {
+  let products=await Product.find({})
+  let id = 1;
 
-  await product.save();
-  res.json({ success: true });
+    if (products.length > 0) {
+      let last_product = products[products.length - 1];
+      id = last_product.id ? last_product.id + 1 : 1;
+    }
+
+  try {
+    const product = new Product({
+      id:id,
+      name: req.body.name,
+      image: req.body.image,   // Use image URL from frontend
+      category: req.body.category,
+      new_price: req.body.new_price,
+      old_price: req.body.old_price,
+    });
+
+    await product.save();
+    res.json({ success: true ,name:req.body.name});
+  } catch (err) {
+    res.json({ success: false, error: err.message });
+  }
 });
+
 
 // Get All Products
 app.get("/allproduct", async (req, res) => {
@@ -117,12 +145,19 @@ app.post("/addtocart", fetchUser, async (req, res) => {
 });
 
 // Remove from Cart
-app.post("/removefromcart", fetchUser, async (req, res) => {
-  const user = await Users.findOne({ email: req.user });
-  user.cartData[req.body.itemId] -= 1;
-  await Users.updateOne({ email: req.user }, { cartData: user.cartData });
-  res.json({ success: true });
+// Remove Product
+// Remove Product
+app.post("/removeproduct", async (req, res) => {
+  try {
+    const { id } = req.body; // get product id from frontend
+    await Product.deleteOne({ id: id }); // remove product from MongoDB
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
+
+
 
 // Get Cart Data
 app.post("/getcart", fetchUser, async (req, res) => {
@@ -131,6 +166,6 @@ app.post("/getcart", fetchUser, async (req, res) => {
 });
 
 // Start Server
-app.listen(3000, () => {
-  console.log("Server running on port 3000");
+app.listen(port, () => {
+   console.log(`Server running on port ${port}`);
 });
