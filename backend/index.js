@@ -8,8 +8,15 @@ const path = require("path");
 const fs = require("fs");
 
 const app = express();
+const corsOptions = {
+  origin: ["http://localhost:5173", "http://localhost:5174"], // frontend + admin
+  methods: ["GET","POST","PUT","DELETE"],
+  credentials: true
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
-app.use(cors());
+
 
 // MongoDB Connection
 mongoose.connect("mongodb://127.0.0.1:27017/shoppingcart");
@@ -22,6 +29,7 @@ const Users = mongoose.model("Users", {
   username: String,
   email: String,
   password: String,
+  role: String, 
   cartData: Object,
 });
 
@@ -68,6 +76,7 @@ app.post("/signup", async (req, res) => {
     username: req.body.username,
     email: req.body.email,
     password: req.body.password,
+    role: "user", 
     cartData: cart,
   });
 
@@ -88,9 +97,18 @@ app.post("/login", async (req, res) => {
     return res.json({ success: false, errors: "Invalid email or password" });
   }
 
-  const token = jwt.sign({email: user.email, role: user.role }, "secret");
-  res.json({ success: true, token });
+  const token = jwt.sign(
+    { email: user.email, role: user.role },
+    "secret"
+  );
+
+  res.json({
+    success: true,
+    token:token,
+    role: user.role 
+  });
 });
+
 
 // Middleware
 const fetchUser = async (req, res, next) => {

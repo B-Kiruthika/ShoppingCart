@@ -104,3 +104,8 @@
 .product_display-right-category span {
   font-weight: 600;
 }
+.size-selected {
+  border: 2px solid #000;
+  background-color: #eee;
+  font-weight: bold;
+}

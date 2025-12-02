@@ -20,13 +20,18 @@ const LoginSignup = () => {
       });
 
       const data = await response.json();
+      console.log(data);
 
       if (data.success) {
-        localStorage.setItem("auth-token", data.token);
-        window.location.replace("/"); 
-      } else {
-        alert(data.errors);
-      }
+  localStorage.setItem("auth-token", data.token);
+
+  if (data.role === "admin") {
+    window.location.href = "http://localhost:5174"; // ADMIN APP URL
+  } else {
+     window.location.href = "/";  // NORMAL USER → FRONTEND SHOP
+  }
+}
+
     } catch (err) {
       console.error(err);
       alert("Login failed. Please try again.");

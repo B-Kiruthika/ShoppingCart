@@ -19,22 +19,35 @@ const CartItem = () => {
       </div>
       <hr />
       {all_product
-        .filter((e) => cartItems[e.id] > 0) 
-        .map((e) => (
-          <div className="cartitems-format cartitems-format-main" key={e.id}>
+  .filter((e) => {
+    // check any size of this product in cartItems
+    return Object.keys(cartItems).some(k => k.startsWith(e.id + "_") && cartItems[k] > 0);
+  })
+  .map((e) => {
+    // map through sizes
+    return Object.keys(cartItems)
+      .filter(k => k.startsWith(e.id + "_") && cartItems[k] > 0)
+      .map((key) => {
+        const size = key.split("_")[1];
+        const quantity = cartItems[key];
+        return (
+          <div className="cartitems-format cartitems-format-main" key={key}>
             <img src={e.image} alt="" className="carticon-product-icon" />
-            <p>{e.name}</p>
+            <p>{e.name} ({size})</p>
             <p>Rs.{e.new_price}</p>
-            <button className="cartitems-quantity">{cartItems[e.id]}</button>
-            <p>Rs.{e.new_price * cartItems[e.id]}</p>
+            <button className="cartitems-quantity">{quantity}</button>
+            <p>Rs.{e.new_price * quantity}</p>
             <img
               className="cartitems-remove-icon"
               src={remove_icon}
-              onClick={() => removeFromCart(e.id)}
+              onClick={() => removeFromCart(key)}
               alt=""
             />
           </div>
-        ))}
+        );
+      });
+  })}
+
       <div className="cart_items-down">
         <div className="cart_items-total">
           <h1>Cart Total</h1>
